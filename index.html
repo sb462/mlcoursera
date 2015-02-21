@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Mlcoursera : Machine learning project in Coursera Data Science specialization">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Mlcoursera</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/sb462/mlcoursera">View on GitHub</a>
+
+          <h1 id="project_title">Mlcoursera</h1>
+          <h2 id="project_tagline">Machine learning project in Coursera Data Science specialization</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/sb462/mlcoursera/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/sb462/mlcoursera/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <hr>
+
+<p>title: Prediction of activity of the subject through analysis of data from wearable
+  devices
+author: "Sandip Biswas"
+date: "Friday, February 20, 2015"</p>
+
+<h2>
+<a id="output-html_document" class="anchor" href="#output-html_document" aria-hidden="true"><span class="octicon octicon-link"></span></a>output: html_document</h2>
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>The group Groupware@LES conducted an experiment and collected data from wearable devices to recognize human activity. The details and the experimental data are given in their <a href="http://groupware.les.inf.puc-rio.br/har">website</a>. The data is collected from different experimental subjects performing excercises in different positions. The goal of this project is to train a model such that from the wearable device data, one can predict the position of excercise.</p>
+
+<h2>
+<a id="data-download-and-cleaning" class="anchor" href="#data-download-and-cleaning" aria-hidden="true"><span class="octicon octicon-link"></span></a>Data download and cleaning</h2>
+
+<p>We download the data and inspect it.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-k">if</span>(<span class="pl-k">!</span>file.exists(<span class="pl-s1"><span class="pl-pds">"</span>C:/Users/sandip/Documents/Coursera/course8/HAR.csv<span class="pl-pds">"</span></span>)){
+download.file(<span class="pl-v">url</span> <span class="pl-k">=</span><span class="pl-s1"><span class="pl-pds">"</span>http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv<span class="pl-pds">"</span></span>, <span class="pl-v">destfile</span><span class="pl-k">=</span><span class="pl-s1"><span class="pl-pds">"</span>C:/Users/sandip/Documents/Coursera/course8/HAR.csv<span class="pl-pds">"</span></span>, <span class="pl-v">mode</span><span class="pl-k">=</span><span class="pl-s1"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>)
+<span class="pl-vo">wearabledata</span> <span class="pl-k">&lt;-</span> read.csv(<span class="pl-v">file</span> <span class="pl-k">=</span> <span class="pl-s1"><span class="pl-pds">"</span>C:/Users/sandip/Documents/Coursera/course8/HAR.csv<span class="pl-pds">"</span></span>, <span class="pl-v">header</span><span class="pl-k">=</span><span class="pl-c1">TRUE</span>, <span class="pl-v">na.strings</span> <span class="pl-k">=</span> c(<span class="pl-s1"><span class="pl-pds">"</span>#DIV/0!<span class="pl-pds">"</span></span>,<span class="pl-s1"><span class="pl-pds">"</span>NA<span class="pl-pds">"</span></span>))
+}</pre></div>
+
+<p>We treat the $"classe"$ as response variable and need to decide on a set of predictor variables from $159$ variables. To clean up the data set, we note that there are several missing $NA$ values. To estimate the columns that have large number of $NA$ and remove them.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-en">percentNA</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span>(<span class="pl-vo">vec</span>){
+  <span class="pl-vo">NApercent</span> <span class="pl-k">&lt;-</span> round(sum(is.na(<span class="pl-vo">vec</span>))<span class="pl-k">/</span>length(<span class="pl-vo">vec</span>)<span class="pl-k">*</span><span class="pl-c1">100</span>,<span class="pl-c1">1</span>)
+  <span class="pl-k">return</span>(<span class="pl-vo">NApercent</span>)
+}
+<span class="pl-vo">wearable.list</span> <span class="pl-k">&lt;-</span> as.list(<span class="pl-vo">wearabledata</span>)
+<span class="pl-vo">NAwearable</span> <span class="pl-k">&lt;-</span> lapply(<span class="pl-v">X</span><span class="pl-k">=</span><span class="pl-vo">wearable.list</span>,<span class="pl-v">FUN</span><span class="pl-k">=</span><span class="pl-vo">percentNA</span>)
+<span class="pl-vo">wearableclean</span> <span class="pl-k">&lt;-</span> <span class="pl-vo">wearabledata</span>[,<span class="pl-k">-</span>which(<span class="pl-vo">NAwearable</span><span class="pl-k">&gt;</span><span class="pl-k">=</span><span class="pl-c1">90</span>)]</pre></div>
+
+<h2>
+<a id="model-training-" class="anchor" href="#model-training-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Model training </h2>
+
+<p>The number of variables have reduced to $59$. By inspection we see that some of them are related to index, timestamp etc. We do not consider them and consider only the predictor variables that are directly related to $classe$. We consider $user name$ as a predictor variable as we presume same subjects would perform activities in similar fashion and the training model should accomodate that.
+We prepare the training dataset and extract a testing data set for cross validation. </p>
+
+<pre lang="r,warning=FALSE,message=FALSE"><code>library(caret)
+set.seed(12)
+inTrain &lt;- createDataPartition(y=wearableclean$classe,
+                               p=0.7, list=FALSE)
+training &lt;- wearableclean[inTrain,][-c(1,3:7)]
+testing &lt;- wearableclean[-inTrain,][-c(1,3:7)]
+
+</code></pre>
+
+<p>We train a model based on random forest on the training data set and will cross-validate the model on the validation data set to estimate the out of sample error</p>
+
+<pre lang="r,"><code>library(randomForest)
+set.seed(14)
+rfModel &lt;- randomForest(x=training[,1:53],y=training[,54],mtry=8,importance=TRUE)
+</code></pre>
+
+<p>The summary of the random forest model is</p>
+
+<pre lang="r,echo=FALSE"><code>print(rfModel)
+</code></pre>
+
+<p>The relative influence of different predictors can be explored by looking at their measures</p>
+
+<pre lang="r,"><code>library(randomForest)
+library(data.table)
+importance.measure &lt;-as.data.frame(cbind(rownames(importance(rfModel, type=1)),
+                           as.vector(round(importance(rfModel, type=1),1)) ))
+setnames(importance.measure, c("predictor_variable","mean_decrease_accuracy"))
+library(dplyr)
+important.predictor &lt;- arrange(importance.measure,desc(mean_decrease_accuracy))[1:5,]
+library(ggplot2)
+</code></pre>
+
+<pre lang="r,fig.height=5,"><code>qplot(predictor_variable,mean_decrease_accuracy, data=important.predictor, 
+      main="Relative influence of different predictors on accuracy", 
+      sub="variable of importance plot", xlab ="predictor variables", 
+      ylab= "mean decrease in accuracy",color = predictor_variable, size=I(5) )
+</code></pre>
+
+<h2>
+<a id="estimation-of-out-of-sample-error-and-cross-validation" class="anchor" href="#estimation-of-out-of-sample-error-and-cross-validation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Estimation of out of sample error and Cross Validation</h2>
+
+<p>The out of sample error can be estimated by the Out-of-bag error estimate in the randomForest model. The OOB error rate is $0.52$ percent. If we  use the validation set for cross validation, and calculate the confusion matrix,</p>
+
+<div class="highlight highlight-r"><pre>set.seed(<span class="pl-c1">15</span>)
+<span class="pl-vo">prediction</span> <span class="pl-k">&lt;-</span> predict(<span class="pl-vo">rfModel</span>, <span class="pl-v">newdata</span> <span class="pl-k">=</span> <span class="pl-vo">testing</span>)
+<span class="pl-vo">cMatrix</span> <span class="pl-k">&lt;-</span> confusionMatrix(<span class="pl-vo">prediction</span>,<span class="pl-vo">testing</span><span class="pl-k">$</span><span class="pl-vo">classe</span>)
+print(<span class="pl-vo">cMatrix</span>)</pre></div>
+
+<p>The accuracy of the model is very high, $0.995$, hence the error estimate is very close to the estimated OOB error. We can use this model to predict the activity ("classe") in the testing set.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Mlcoursera maintained by <a href="https://github.com/sb462">sb462</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
